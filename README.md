@@ -1,6 +1,5 @@
 # Compute-to-Data
- provides a means to exchange data while preserving privacy.
-
+#provides a means to exchange data while preserving privacy.
 
 # Setup logging
 
@@ -9,7 +8,6 @@ manta_logging.logger.setLevel('INFO')
 print("squid-py Ocean API version:", squid_py.__version__)
 
 # Get the configuration file path for this environment
-
 
 CONFIG_PATH = Path(os.path.expanduser(os.environ['CONFIG_PATH']))
 
@@ -75,6 +73,7 @@ print("Consumer account address: {}".format(consumer_account.address))
 time.sleep(5)  # wait a bit more for the eth transaction to validate
 
 if ocn.accounts.balance(consumer_account).ocn/scale < 100:
+    
     ocn.accounts.request_tokens(consumer_account, 100)
     
 # Verify both test and eth balance
@@ -94,24 +93,33 @@ assert ocn.accounts.balance(consumer_account).ocn/scale > 0.0, 'Cannot continue 
 cluster = ocn.compute.build_cluster_attributes('kubernetes', '/cluster/url')
 
 containers = [ocn.compute.build_container_attributes(
+    
     "tensorflow/tensorflow",
+    
     "latest",
+    
     "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc")
+
 ]
 
 servers = [ocn.compute.build_server_attributes('1', 'xlsize', 16, 0, '16gb', '1tb', 2242244)]
 
 provider_attributes = ocn.compute.build_service_provider_attributes(
+    
     'Azure', 'Compute power 1', cluster, containers, servers
+
 )
 
 attributes = ocn.compute.create_compute_service_attributes(
+    
     13, 3600, publisher_acct.address, get_timestamp(), provider_attributes
+
 )
 
 service_endpoint = Brizo.get_compute_endpoint(ocn.config)
 
 template_id = ocn.keeper.template_manager.create_template_id(
+    
     ocn.keeper.template_manager.SERVICE_TO_TEMPLATE_NAME['compute']
 )
 
@@ -128,10 +136,15 @@ metadata = get_metadata_example()
 # With this metadata object prepared, we are ready to publish the asset into Ocean Protocol.
 
 ddo = ocn.assets.create(
+    
     metadata,
+    
     publisher_acct,
+    
     [service_descriptor],
+    
     providers=[provider_address],
+    
     use_secret_store=False
 )
 
@@ -163,8 +176,11 @@ print(f'algorithm: \n{algorithm_text}')
 
 algorithm_meta = AlgorithmMetadata(
     {
+        
         'language': 'python',
+        
         'rawcode': algorithm_text,
+        
         'container': {
             'tag': 'latest',
             'image': 'amancevice/pandas',
@@ -187,25 +203,32 @@ algorithm_meta = AlgorithmMetadata(
 # processed automatically once the agreement is created successfully.
 
 agreement_id = ocn.compute.order(
+    
     ddo.did,
+    
     consumer_account,
+    
     provider_address=provider_address
 )
+
 
 print(f'Got agreementId: {agreement_id}')
 
 event = ocn.keeper.agreement_manager.subscribe_agreement_created(agreement_id, 20, None, (), wait=True)
 
 if event:
+    
     print(f'Got agreement event {agreement_id}: {event}')
 
 else:
+    
     print(f'Cannot find agreement event, could be a VM transaction error.')
 
 
 # Wait for payment transaction
 
 payment_locked_event = ocn.keeper.lock_reward_condition.subscribe_condition_fulfilled(
+    
     agreement_id, 30, None, [], wait=True, from_block=0
 )
 
@@ -216,6 +239,7 @@ print('Payment was successful.')
 # and wait for service agreement approval from the provider end
 
 compute_approval_event = ocn.keeper.compute_execution_condition.subscribe_condition_fulfilled(
+    
     agreement_id, 30, None, [], wait=True, from_block=0
 )
 
@@ -247,6 +271,7 @@ trials = 0
 result = ocn.compute.result(agreement_id, job_id, consumer_account)
 
 while not result.get('urls'):
+    
     print(f'result not available yet, trial {trials}/30, '
           f'status is: {ocn.compute.status(agreement_id, job_id, consumer_account)}')
     
@@ -257,7 +282,9 @@ while not result.get('urls'):
     trials = trials + 1
     
     if trials > 20:
+        
         print(f'the run is taking too long, I give up.')
+        
         break
 
 print(f'got result from compute job: {result}')
